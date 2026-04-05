@@ -3,6 +3,7 @@ import path from "path";
 import multer from "multer";
 import FormData from "form-data";
 import fetch from "node-fetch";
+import { init, searchAssets } from "@immich/sdk";
 
 const app = express();
 
@@ -10,6 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const IMMICH_URL = process.env.IMMICH_URL || "http://localhost:2283";
 const IMMICH_API_KEY = process.env.IMMICH_API_KEY || "";
+
+// Initialize Immich SDK
+init({
+  baseUrl: `${IMMICH_URL}/api`,
+  apiKey: IMMICH_API_KEY,
+});
 
 // Multer in-memory storage for proxying uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -66,7 +73,7 @@ app.use(express.urlencoded({ extended: true }));
 const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));
 
-// Search route for Immich asset metadata - using more structured approach
+// Search route for Immich asset metadata - using Immich SDK
 app.post("/search", async (req, res) => {
   try {
     // Validate request body
@@ -76,21 +83,23 @@ app.post("/search", async (req, res) => {
       return res.status(400).json({ error: "Missing required parameter: originalPath" });
     }
     
-    // Prepare search parameters for Immich API
-    const searchParams = {
-      originalPath,
-      page,
-      size,
-      // Add other search parameters as needed
-    };
+    console.log("Executing search with params:", { originalPath, page, size });
     
-    console.log("Executing search with params:", searchParams);
+    // Convert pagination format: page/size → offset/limit for SDK
+    const offset = (page - 1) * size;
+    const limit = size;
     
-    const result = await immichRequest("/api/search/metadata", "POST", JSON.stringify(searchParams), {
-      "Content-Type": "application/json",
+    // Use Immich SDK to search assets by path (using MetadataSearchDto structure)
+    const results = await searchAssets({
+      metadataSearchDto: {
+        originalPath,
+        page,
+        size,
+      },
     });
     
-    res.status(result.status).set("Content-Type", result.contentType).send(result.text);
+    // Return results in compatible format
+    res.status(200).json(results);
   } catch (err: any) {
     console.error("Search error:", err);
     res.status(500).json({ error: "Search failed", details: err.message });
