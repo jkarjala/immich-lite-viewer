@@ -9,6 +9,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@immich/sdk": "^2.6.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "form-data": "^4.0.5",

@@ -66,12 +66,30 @@ app.use(express.urlencoded({ extended: true }));
 const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));
 
-// Search route for Immich asset metadata
+// Search route for Immich asset metadata - using more structured approach
 app.post("/search", async (req, res) => {
   try {
-    const result = await immichRequest("/api/search/metadata", "POST", JSON.stringify(req.body), {
+    // Validate request body
+    const { originalPath, page = 1, size = 1000 } = req.body;
+    
+    if (!originalPath) {
+      return res.status(400).json({ error: "Missing required parameter: originalPath" });
+    }
+    
+    // Prepare search parameters for Immich API
+    const searchParams = {
+      originalPath,
+      page,
+      size,
+      // Add other search parameters as needed
+    };
+    
+    console.log("Executing search with params:", searchParams);
+    
+    const result = await immichRequest("/api/search/metadata", "POST", JSON.stringify(searchParams), {
       "Content-Type": "application/json",
     });
+    
     res.status(result.status).set("Content-Type", result.contentType).send(result.text);
   } catch (err: any) {
     console.error("Search error:", err);
