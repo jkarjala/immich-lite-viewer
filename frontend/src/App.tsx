@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import './App.css'
+// import './App.css'
 
 interface Asset {
   id: string
@@ -22,19 +22,23 @@ function App() {
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchPath, setSearchPath] = useState('rantatalo')
 
   useEffect(() => {
     const fetchAssets = async () => {
       try {
+        setLoading(true)
+        setError(null)
+        
         const response = await fetch('/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            originalPath: 'rantatalo',
+            originalPath: searchPath,
             page: 1,
-            size: 50,
+            size: 1000
           }),
         })
 
@@ -58,12 +62,31 @@ function App() {
     }
 
     fetchAssets()
-  }, [])
+  }, [searchPath])
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchPath(e.target.value)
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // The useEffect will automatically trigger the search with the new path
+  }
 
   return (
     <>
       <div>
         <h1>Immich Lite Viewer</h1>
+        <form onSubmit={handleSearchSubmit}>
+          <input
+            type="text"
+            value={searchPath}
+            onChange={handleSearchChange}
+            placeholder="Enter search path (e.g., rantatalo)"
+            style={{ padding: '8px', marginRight: '8px', width: '300px' }}
+          />
+          <button type="submit" style={{ padding: '8px 16px' }}>Search</button>
+        </form>
       </div>
       <div className="card">
         {loading ? (
@@ -72,7 +95,7 @@ function App() {
           <p style={{ color: 'red' }}>Error: {error}</p>
         ) : assets.length > 0 ? (
           <div>
-            <h2>Assets with "rantatalo" in path ({assets.length})</h2>
+            <h2>Assets with "{searchPath}" in path ({assets.length})</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
               {assets.map((asset) => (
                 <div key={asset.id} style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden', borderRadius: '8px', backgroundColor: '#f0f0f0' }} title={asset.originalFileName}>
@@ -89,7 +112,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <p>No assets found with "rantatalo" in path</p>
+          <p>No assets found with "{searchPath}" in path</p>
         )}
       </div>
     </>
