@@ -46,14 +46,10 @@ function App() {
         throw new Error(`Search failed with status ${response.status}`)
       }
 
-      const data = (await response.json()) as SearchResponse
-      console.log('Full search response:', data)
-      console.log('Assets items:', data.assets?.items)
-      
+      const data = (await response.json()) as SearchResponse      
       const assetsToSet = data.assets?.items || []
       console.log('Setting assets to:', assetsToSet)
-      // Reverse the asset order
-      setAssets(assetsToSet.reverse())
+      setAssets(assetsToSet)
       // Update the last search path after successful search
       setLastSearchPath(path)
     } catch (err) {

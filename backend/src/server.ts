@@ -3,7 +3,7 @@ import path from "path";
 import multer from "multer";
 import FormData from "form-data";
 import fetch from "node-fetch";
-import { init, searchAssets } from "@immich/sdk";
+import { AssetOrder, init, searchAssets } from "@immich/sdk";
 
 const app = express();
 
@@ -95,6 +95,7 @@ app.post("/search", async (req, res) => {
         originalPath,
         page,
         size,
+        order: AssetOrder.Asc,
       },
     });
     
