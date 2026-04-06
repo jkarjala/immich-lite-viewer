@@ -70,7 +70,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve built frontend from ./public
-const publicDir = path.join(__dirname, "public");
+const publicDir = path.join(__dirname, "../../frontend/dist");
 app.use(express.static(publicDir));
 
 // Search route for Immich asset metadata - using Immich SDK
