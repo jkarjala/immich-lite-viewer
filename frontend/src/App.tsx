@@ -26,6 +26,7 @@ function App() {
   const [lastSearchPath, setLastSearchPath] = useState('rantatalo')
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
+  const [searchFieldEdited, setSearchFieldEdited] = useState(false)
 
   const fetchAssets = async (path: string) => {
     try {
@@ -54,6 +55,8 @@ function App() {
       setAssets(assetsToSet)
       // Update the last search path after successful search
       setLastSearchPath(path)
+      // Reset the edit flag after successful search
+      setSearchFieldEdited(false)
     } catch (err) {
       console.error('Fetch error:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch assets')
@@ -69,8 +72,69 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedAsset) return
-      
+      if (!selectedAsset && assets.length > 0) {
+        if (e.key === 'Enter') {
+          if (searchFieldEdited) {
+            // If search field was edited, focus on it (user wants to modify search)
+            const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
+            searchInput?.focus()
+          } else {
+            // Open first asset on overlay if search field hasn't been edited since last search
+            setSelectedAsset(assets[0])
+            setSelectedIndex(0)
+            setSearchFieldEdited(false)
+          }
+        }
+      } else if (selectedAsset) {
+        if (e.key === 'Escape' || e.key === 'ArrowUp') {
+          e.preventDefault()
+          setSelectedAsset(null)
+          setSelectedIndex(-1)
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
+          setSelectedAsset(assets[nextIndex])
+          setSelectedIndex(nextIndex)
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
+          setSelectedAsset(assets[prevIndex])
+          setSelectedIndex(prevIndex)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedAsset, selectedIndex, assets, searchFieldEdited])
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchPath(e.target.value)
+    setSearchFieldEdited(true)
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Only trigger search when user clicks search button
+    fetchAssets(searchPath)
+  }
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!selectedAsset && assets.length > 0 && !searchFieldEdited && e.key === 'Enter') {
+      // Open first asset on overlay if search field hasn't been edited since last search
+      setSelectedAsset(assets[0])
+      setSelectedIndex(0)
+      setSearchFieldEdited(false)
+    } else if (!selectedAsset && assets.length > 0 && e.key === 'Enter' && searchFieldEdited) {
+      // If search field was edited, just focus on it (user wants to modify search)
+      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
+      searchInput?.focus()
+    } else if (!selectedAsset && assets.length > 0 && e.key === 'Enter' && !searchFieldEdited) {
+      // Open first asset on overlay
+      setSelectedAsset(assets[0])
+      setSelectedIndex(0)
+      setSearchFieldEdited(false)
+    } else if (selectedAsset) {
       if (e.key === 'Escape' || e.key === 'ArrowUp') {
         e.preventDefault()
         setSelectedAsset(null)
@@ -87,20 +151,12 @@ function App() {
         setSelectedIndex(prevIndex)
       }
     }
+  }
 
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedAsset, selectedIndex, assets])
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchPath(e.target.value)
-  }
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Only trigger search when user clicks search button
-    fetchAssets(searchPath)
-  }
+  }, [selectedAsset, selectedIndex, assets, searchFieldEdited])
 
   return (
     <>
