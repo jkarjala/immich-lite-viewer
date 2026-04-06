@@ -70,44 +70,6 @@ function App() {
     fetchAssets(searchPath)
   }, [])
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedAsset && assets.length > 0) {
-        if (e.key === 'Enter') {
-          if (searchFieldEdited) {
-            // If search field was edited, focus on it (user wants to modify search)
-            const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
-            searchInput?.focus()
-          } else {
-            // Open first asset on overlay if search field hasn't been edited since last search
-            setSelectedAsset(assets[0])
-            setSelectedIndex(0)
-            setSearchFieldEdited(false)
-          }
-        }
-      } else if (selectedAsset) {
-        if (e.key === 'Escape' || e.key === 'ArrowUp') {
-          e.preventDefault()
-          setSelectedAsset(null)
-          setSelectedIndex(-1)
-        } else if (e.key === 'ArrowRight') {
-          e.preventDefault()
-          const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
-          setSelectedAsset(assets[nextIndex])
-          setSelectedIndex(nextIndex)
-        } else if (e.key === 'ArrowLeft') {
-          e.preventDefault()
-          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
-          setSelectedAsset(assets[prevIndex])
-          setSelectedIndex(prevIndex)
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedAsset, selectedIndex, assets, searchFieldEdited])
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchPath(e.target.value)
     setSearchFieldEdited(true)
@@ -119,41 +81,65 @@ function App() {
     fetchAssets(searchPath)
   }
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (!selectedAsset && assets.length > 0 && !searchFieldEdited && e.key === 'Enter') {
-      // Open first asset on overlay if search field hasn't been edited since last search
-      setSelectedAsset(assets[0])
-      setSelectedIndex(0)
-      setSearchFieldEdited(false)
-    } else if (!selectedAsset && assets.length > 0 && e.key === 'Enter' && searchFieldEdited) {
-      // If search field was edited, just focus on it (user wants to modify search)
-      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
-      searchInput?.focus()
-    } else if (!selectedAsset && assets.length > 0 && e.key === 'Enter' && !searchFieldEdited) {
-      // Open first asset on overlay
-      setSelectedAsset(assets[0])
-      setSelectedIndex(0)
-      setSearchFieldEdited(false)
-    } else if (selectedAsset) {
-      if (e.key === 'Escape' || e.key === 'ArrowUp') {
-        e.preventDefault()
-        setSelectedAsset(null)
-        setSelectedIndex(-1)
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
-        setSelectedAsset(assets[nextIndex])
-        setSelectedIndex(nextIndex)
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
-        setSelectedAsset(assets[prevIndex])
-        setSelectedIndex(prevIndex)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // If modal is open, handle navigation within it
+      if (selectedAsset) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setSelectedAsset(null)
+          setSelectedIndex(-1)
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault()
+          const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
+          setSelectedIndex(nextIndex)
+          setSelectedAsset(assets[nextIndex])
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault()
+          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
+          setSelectedIndex(prevIndex)
+          setSelectedAsset(assets[prevIndex])
+        } else if (e.key === 'Home') {
+          e.preventDefault()
+          setSelectedIndex(0)
+          setSelectedAsset(assets[0])
+        } else if (e.key === 'End') {
+          e.preventDefault()
+          setSelectedIndex(assets.length - 1)
+          setSelectedAsset(assets[assets.length - 1])
+        }
+      } 
+      // If no modal and assets exist, handle grid navigation
+      else if (!selectedAsset && assets.length > 0) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault()
+          const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
+          setSelectedIndex(nextIndex)
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault()
+          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
+          setSelectedIndex(prevIndex)
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          // If search field was edited, focus on it; otherwise open first asset
+          if (searchFieldEdited) {
+            const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
+            searchInput?.focus()
+          } else {
+            setSelectedAsset(assets[0])
+            setSelectedIndex(0)
+            setSearchFieldEdited(false)
+          }
+        } else if (e.key === 'Home') {
+          e.preventDefault()
+          setSelectedIndex(0)
+        } else if (e.key === 'End') {
+          e.preventDefault()
+          setSelectedIndex(assets.length - 1)
+        }
       }
     }
-  }
 
-  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedAsset, selectedIndex, assets, searchFieldEdited])
@@ -183,14 +169,27 @@ function App() {
             <h2>Assets with "{lastSearchPath}" in path ({assets.length})</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
               {assets.map((asset, index) => (
-                <div key={asset.id} style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden', borderRadius: '8px', backgroundColor: '#f0f0f0' }} title={asset.originalFileName}>
+                <div 
+                  key={asset.id} 
+                  style={{ 
+                    cursor: 'pointer', 
+                    position: 'relative', 
+                    overflow: 'hidden', 
+                    borderRadius: '8px', 
+                    backgroundColor: selectedIndex === index ? '#4a90d9' : '#f0f0f0',
+                    border: selectedIndex === index ? '3px solid #2196F3' : 'none',
+                    outline: selectedIndex === index ? '3px solid #2196F3' : 'none',
+                    outlineOffset: '4px'
+                  }} 
+                  title={asset.originalFileName}
+                  onClick={() => { setSelectedAsset(asset); setSelectedIndex(index); }}
+                >
                   <img 
                     src={`/api/assets/${asset.id}/thumbnail`} 
                     alt={asset.originalFileName}
                     style={{ width: '100%', height: '150px', objectFit: 'cover', display: 'block' }}
-                    onClick={() => { setSelectedAsset(asset); setSelectedIndex(index); }}
                   />
-                  <div style={{ fontSize: '12px', padding: '4px', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', maxHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: '12px', padding: '4px', backgroundColor: selectedIndex === index ? '#2196F3' : 'rgba(0,0,0,0.7)', color: 'white', maxHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {asset.originalFileName}
                   </div>
                 </div>
