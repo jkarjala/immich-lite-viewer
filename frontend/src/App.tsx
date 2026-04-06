@@ -25,6 +25,7 @@ function App() {
   const [searchPath, setSearchPath] = useState('rantatalo')
   const [lastSearchPath, setLastSearchPath] = useState('rantatalo')
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1)
 
   const fetchAssets = async (path: string) => {
     try {
@@ -66,6 +67,31 @@ function App() {
     fetchAssets(searchPath)
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedAsset) return
+      
+      if (e.key === 'Escape' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedAsset(null)
+        setSelectedIndex(-1)
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
+        setSelectedAsset(assets[nextIndex])
+        setSelectedIndex(nextIndex)
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
+        setSelectedAsset(assets[prevIndex])
+        setSelectedIndex(prevIndex)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedAsset, selectedIndex, assets])
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchPath(e.target.value)
   }
@@ -100,13 +126,13 @@ function App() {
           <div>
             <h2>Assets with "{lastSearchPath}" in path ({assets.length})</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
-              {assets.map((asset) => (
+              {assets.map((asset, index) => (
                 <div key={asset.id} style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden', borderRadius: '8px', backgroundColor: '#f0f0f0' }} title={asset.originalFileName}>
                   <img 
                     src={`/api/assets/${asset.id}/thumbnail`} 
                     alt={asset.originalFileName}
                     style={{ width: '100%', height: '150px', objectFit: 'cover', display: 'block' }}
-                    onClick={() => setSelectedAsset(asset)}
+                    onClick={() => { setSelectedAsset(asset); setSelectedIndex(index); }}
                   />
                   <div style={{ fontSize: '12px', padding: '4px', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', maxHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {asset.originalFileName}
