@@ -146,50 +146,39 @@ function App() {
 
   return (
     <>
-      <div>
-        <h1>Immich Lite Viewer</h1>
-        <form onSubmit={handleSearchSubmit}>
-          <input
-            type="text"
-            value={searchPath}
-            onChange={handleSearchChange}
-            placeholder="Enter search path (e.g., rantatalo)"
-            style={{ padding: '8px', marginRight: '8px', width: '300px' }}
-          />
-          <button type="submit" style={{ padding: '8px 16px' }}>Search</button>
-        </form>
-      </div>
+      <h1>Immich Lite Viewer</h1>
+      <form onSubmit={handleSearchSubmit} className="search-form">
+        <input
+          type="text"
+          value={searchPath}
+          onChange={handleSearchChange}
+          placeholder="Enter search path (e.g., rantatalo)"
+          className="search-input"
+        />
+        <button type="submit" className="search-button">Search</button>
+      </form>
       <div className="card">
         {loading ? (
           <p>Loading assets...</p>
         ) : error ? (
-          <p style={{ color: 'red' }}>Error: {error}</p>
+          <p className="error-message">Error: {error}</p>
         ) : assets.length > 0 ? (
-          <div>
+          <div className="assets-section">
             <h2>Assets with "{lastSearchPath}" in path ({assets.length})</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
+            <div className="assets-grid">
               {assets.map((asset, index) => (
                 <div 
                   key={asset.id} 
-                  style={{ 
-                    cursor: 'pointer', 
-                    position: 'relative', 
-                    overflow: 'hidden', 
-                    borderRadius: '8px', 
-                    backgroundColor: selectedIndex === index ? '#4a90d9' : '#f0f0f0',
-                    border: selectedIndex === index ? '3px solid #2196F3' : 'none',
-                    outline: selectedIndex === index ? '3px solid #2196F3' : 'none',
-                    outlineOffset: '4px'
-                  }} 
+                  className={`asset-item ${selectedIndex === index ? 'selected' : ''}`}
                   title={asset.originalFileName}
                   onClick={() => { setSelectedAsset(asset); setSelectedIndex(index); }}
                 >
                   <img 
                     src={`/api/assets/${asset.id}/thumbnail`} 
                     alt={asset.originalFileName}
-                    style={{ width: '100%', height: '150px', objectFit: 'cover', display: 'block' }}
+                    className="asset-thumbnail"
                   />
-                  <div style={{ fontSize: '12px', padding: '4px', backgroundColor: selectedIndex === index ? '#2196F3' : 'rgba(0,0,0,0.7)', color: 'white', maxHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div className="asset-filename">
                     {asset.originalFileName}
                   </div>
                 </div>
@@ -197,36 +186,20 @@ function App() {
             </div>
           </div>
         ) : (
-          <p>No assets found with "{lastSearchPath}" in path</p>
+          <p className="no-assets-text">No assets found with "{lastSearchPath}" in path</p>
         )}
       </div>
 
       {/* Fullscreen Modal - Original Image Only */}
       {selectedAsset && (
         <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            cursor: 'pointer'
-          }}
+          className="modal-backdrop"
           onClick={() => setSelectedAsset(null)}
         >
           <img 
             src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`} 
             alt={selectedAsset.originalFileName}
-            style={{
-              maxWidth: '95%',
-              maxHeight: '95vh',
-              objectFit: 'contain'
-            }}
+            className="modal-image"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
