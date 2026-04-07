@@ -220,7 +220,7 @@ function App() {
           onClick={() => setSelectedAsset(null)}
         >
           <img 
-            src={`/api/assets/${selectedAsset.id}/original`} 
+            src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`} 
             alt={selectedAsset.originalFileName}
             style={{
               maxWidth: '95%',

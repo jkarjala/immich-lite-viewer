@@ -136,7 +136,12 @@ app.all("/api/*", upload.any(), async (req, res) => {
     }
 
     console.log("req:", IMMICH_URL + req.path, body, headers);
-    const result = await immichRequest(req.path, req.method, body, headers);
+    
+    // Preserve query parameters from the incoming request
+    const queryString = req.url.split('?')[1];
+    const targetPath = queryString ? `${req.path}?${queryString}` : req.path;
+    
+    const result = await immichRequest(targetPath, req.method, body, headers);
     res.status(result.status).set("Content-Type", result.contentType);
     
     if (result.buffer) {
