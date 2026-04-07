@@ -57,6 +57,10 @@ function App() {
       setLastSearchPath(path)
       // Reset the edit flag after successful search
       setSearchFieldEdited(false)
+      // Focus on first thumbnail after search completes (if not already in modal)
+      if (!selectedAsset && assetsToSet.length > 0) {
+        setSelectedIndex(0)
+      }
     } catch (err) {
       console.error('Fetch error:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch assets')
@@ -83,6 +87,13 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't capture keys when focus is inside the search form
+      if (!selectedAsset && e.target instanceof HTMLElement) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          return
+        }
+      }
+
       // If modal is open, handle navigation within it
       if (selectedAsset) {
         if (e.key === 'Escape') {
@@ -171,7 +182,29 @@ function App() {
                   key={asset.id} 
                   className={`asset-item ${selectedIndex === index ? 'selected' : ''}`}
                   title={asset.originalFileName}
+                  tabIndex={0}
                   onClick={() => { setSelectedAsset(asset); setSelectedIndex(index); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setSelectedAsset(asset)
+                      setSelectedIndex(index)
+                    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                      e.preventDefault()
+                      const nextIndex = index < assets.length - 1 ? index + 1 : 0
+                      setSelectedIndex(nextIndex)
+                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                      e.preventDefault()
+                      const prevIndex = index > 0 ? index - 1 : assets.length - 1
+                      setSelectedIndex(prevIndex)
+                    } else if (e.key === 'Home') {
+                      e.preventDefault()
+                      setSelectedIndex(0)
+                    } else if (e.key === 'End') {
+                      e.preventDefault()
+                      setSelectedIndex(assets.length - 1)
+                    }
+                  }}
                 >
                   <img 
                     src={`/api/assets/${asset.id}/thumbnail`} 
