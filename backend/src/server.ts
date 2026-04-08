@@ -4,13 +4,16 @@ import multer from "multer";
 import FormData from "form-data";
 import fetch from "node-fetch";
 import { AssetOrder, init, searchAssets } from "@immich/sdk";
+import { fileURLToPath } from "url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // Config
 const PORT = process.env.PORT || 4000;
 const IMMICH_URL = process.env.IMMICH_URL || "http://localhost:2283";
 const IMMICH_API_KEY = process.env.IMMICH_API_KEY || "";
+const isDev = process.env.NODE_ENV == "development";
 
 // Initialize Immich SDK
 init({
@@ -69,9 +72,12 @@ async function immichRequest(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve built frontend from ./public
-const publicDir = path.join(__dirname, "../../frontend/dist");
+// Serve built frontend
+const publicDir = isDev 
+  ? path.join(__dirname, "../../frontend/dist")
+  : path.join(__dirname, "../../public");
 app.use(express.static(publicDir));
+console.log("Serving frontend from:", publicDir);
 
 // Search route for Immich asset metadata - using Immich SDK
 app.post("/search", async (req, res) => {
