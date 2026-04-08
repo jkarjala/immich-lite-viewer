@@ -2,6 +2,27 @@ import { useEffect, useState, useRef } from 'react'
 
 import './App.css'
 
+// Helper function to check key with legacy browser support
+const isKey = (e: KeyboardEvent | React.KeyboardEvent, keyName: string, keyCode: number): boolean => {
+  // Modern browsers use e.key
+  if (e.key === keyName) return true
+  // Legacy browsers use e.keyCode
+  if ((e as any).keyCode === keyCode) return true
+  return false
+}
+
+// Key code mappings for legacy browsers
+const KEYCODES = {
+  ENTER: 13,
+  ESCAPE: 27,
+  ARROW_LEFT: 37,
+  ARROW_UP: 38,
+  ARROW_RIGHT: 39,
+  ARROW_DOWN: 40,
+  HOME: 36,
+  END: 35,
+}
+
 interface Asset {
   id: string
   originalFileName: string
@@ -92,7 +113,7 @@ function App() {
   }
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (isKey(e, 'Enter', KEYCODES.ENTER)) {
       e.preventDefault()
       // Perform search and focus on grid
       fetchAssets(searchPath)
@@ -116,24 +137,24 @@ function App() {
 
       // If modal is open, handle navigation within it
       if (selectedAsset) {
-        if (e.key === 'Escape') {
+        if (isKey(e, 'Escape', KEYCODES.ESCAPE)) {
           e.preventDefault()
           setSelectedAsset(null)
-        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        } else if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT) || isKey(e, 'ArrowDown', KEYCODES.ARROW_DOWN)) {
           e.preventDefault()
           const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
           setSelectedIndex(nextIndex)
           setSelectedAsset(assets[nextIndex])
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT) || isKey(e, 'ArrowUp', KEYCODES.ARROW_UP)) {
           e.preventDefault()
           const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
           setSelectedIndex(prevIndex)
           setSelectedAsset(assets[prevIndex])
-        } else if (e.key === 'Home') {
+        } else if (isKey(e, 'Home', KEYCODES.HOME)) {
           e.preventDefault()
           setSelectedIndex(0)
           setSelectedAsset(assets[0])
-        } else if (e.key === 'End') {
+        } else if (isKey(e, 'End', KEYCODES.END)) {
           e.preventDefault()
           setSelectedIndex(assets.length - 1)
           setSelectedAsset(assets[assets.length - 1])
@@ -141,15 +162,15 @@ function App() {
       } 
       // If no modal and assets exist, handle grid navigation
       else if (!selectedAsset && assets.length > 0) {
-        if (e.key === 'ArrowRight' ) {
+        if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT)) {
           e.preventDefault()
           const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
           setSelectedIndex(nextIndex)
-        } else if (e.key === 'ArrowLeft' ) {
+        } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT)) {
           e.preventDefault()
           const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
           setSelectedIndex(prevIndex)
-        } else if (e.key === 'Enter') {
+        } else if (isKey(e, 'Enter', KEYCODES.ENTER)) {
           e.preventDefault()
           // If search field was edited, focus on it; otherwise open first asset
           if (searchFieldEdited) {
@@ -159,10 +180,10 @@ function App() {
             setSelectedAsset(assets[selectedIndex])
             setSearchFieldEdited(false)
           }
-        } else if (e.key === 'Home') {
+        } else if (isKey(e, 'Home', KEYCODES.HOME)) {
           e.preventDefault()
           setSelectedIndex(0)
-        } else if (e.key === 'End') {
+        } else if (isKey(e, 'End', KEYCODES.END)) {
           e.preventDefault()
           setSelectedIndex(assets.length - 1)
         }
