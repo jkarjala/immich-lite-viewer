@@ -137,15 +137,15 @@ function App() {
 
       // If modal is open, handle navigation within it
       if (selectedAsset) {
-        if (isKey(e, 'Escape', KEYCODES.ESCAPE)) {
+        if (isKey(e, 'Escape', KEYCODES.ESCAPE) || isKey(e, 'ArrowUp', KEYCODES.ARROW_UP)) {
           e.preventDefault()
           setSelectedAsset(null)
-        } else if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT) || isKey(e, 'ArrowDown', KEYCODES.ARROW_DOWN)) {
+        } else if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT)) {
           e.preventDefault()
           const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
           setSelectedIndex(nextIndex)
           setSelectedAsset(assets[nextIndex])
-        } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT) || isKey(e, 'ArrowUp', KEYCODES.ARROW_UP)) {
+        } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT)) {
           e.preventDefault()
           const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
           setSelectedIndex(prevIndex)
@@ -220,26 +220,6 @@ function App() {
               ref={gridRef}
               className="assets-grid"
               tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                  e.preventDefault()
-                  const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
-                  setSelectedIndex(nextIndex)
-                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                  e.preventDefault()
-                  const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
-                  setSelectedIndex(prevIndex)
-                } else if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  setSelectedAsset(assets[selectedIndex])
-                } else if (e.key === 'Home') {
-                  e.preventDefault()
-                  setSelectedIndex(0)
-                } else if (e.key === 'End') {
-                  e.preventDefault()
-                  setSelectedIndex(assets.length - 1)
-                }
-              }}
             >
               {assets.map((asset, index) => (
                 <div 
