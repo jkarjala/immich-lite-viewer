@@ -119,7 +119,6 @@ function App() {
         if (e.key === 'Escape') {
           e.preventDefault()
           setSelectedAsset(null)
-          setSelectedIndex(-1)
         } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
           e.preventDefault()
           const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
@@ -142,11 +141,11 @@ function App() {
       } 
       // If no modal and assets exist, handle grid navigation
       else if (!selectedAsset && assets.length > 0) {
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        if (e.key === 'ArrowRight' ) {
           e.preventDefault()
           const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
           setSelectedIndex(nextIndex)
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        } else if (e.key === 'ArrowLeft' ) {
           e.preventDefault()
           const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
           setSelectedIndex(prevIndex)
@@ -226,7 +225,7 @@ function App() {
                   key={asset.id} 
                   className={`asset-item ${selectedIndex === index ? 'selected' : ''}`}
                   title={asset.originalFileName}
-                  onClick={() => { setSelectedAsset(asset); setSelectedIndex(index); }}
+                  onClick={() => { setSelectedIndex(index); setSelectedAsset(asset); }}
                 >
                   <img 
                     src={`/api/assets/${asset.id}/thumbnail`} 
