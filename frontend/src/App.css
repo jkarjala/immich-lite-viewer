@@ -91,6 +91,17 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
+  outline: none;
+}
+
+.assets-grid:focus {
+  outline: 3px solid #2196F3;
+  outline-offset: 4px;
+}
+
+.assets-grid:focus-visible {
+  outline: 3px solid #2196F3;
+  outline-offset: 4px;
 }
 
 .asset-item {

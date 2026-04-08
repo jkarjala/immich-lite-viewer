@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 import './App.css'
 
@@ -27,6 +27,7 @@ function App() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
   const [searchFieldEdited, setSearchFieldEdited] = useState(false)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   const fetchAssets = async (path: string) => {
     try {
@@ -73,6 +74,13 @@ function App() {
     // Initial load with default search path
     fetchAssets(searchPath)
   }, [])
+
+  useEffect(() => {
+    // Focus on grid after successful search if not in modal
+    if (assets.length > 0 && !selectedAsset) {
+      gridRef.current?.focus()
+    }
+  }, [assets, selectedAsset])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchPath(e.target.value)
@@ -137,8 +145,7 @@ function App() {
             const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
             searchInput?.focus()
           } else {
-            setSelectedAsset(assets[0])
-            setSelectedIndex(0)
+            setSelectedAsset(assets[selectedIndex])
             setSearchFieldEdited(false)
           }
         } else if (e.key === 'Home') {
@@ -176,35 +183,37 @@ function App() {
         ) : assets.length > 0 ? (
           <div className="assets-section">
             <h2>Assets with "{lastSearchPath}" in path ({assets.length})</h2>
-            <div className="assets-grid">
+            <div 
+              ref={gridRef}
+              className="assets-grid"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
+                  setSelectedIndex(nextIndex)
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
+                  setSelectedIndex(prevIndex)
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  setSelectedAsset(assets[selectedIndex])
+                } else if (e.key === 'Home') {
+                  e.preventDefault()
+                  setSelectedIndex(0)
+                } else if (e.key === 'End') {
+                  e.preventDefault()
+                  setSelectedIndex(assets.length - 1)
+                }
+              }}
+            >
               {assets.map((asset, index) => (
                 <div 
                   key={asset.id} 
                   className={`asset-item ${selectedIndex === index ? 'selected' : ''}`}
                   title={asset.originalFileName}
-                  tabIndex={0}
                   onClick={() => { setSelectedAsset(asset); setSelectedIndex(index); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      setSelectedAsset(asset)
-                      setSelectedIndex(index)
-                    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                      e.preventDefault()
-                      const nextIndex = index < assets.length - 1 ? index + 1 : 0
-                      setSelectedIndex(nextIndex)
-                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                      e.preventDefault()
-                      const prevIndex = index > 0 ? index - 1 : assets.length - 1
-                      setSelectedIndex(prevIndex)
-                    } else if (e.key === 'Home') {
-                      e.preventDefault()
-                      setSelectedIndex(0)
-                    } else if (e.key === 'End') {
-                      e.preventDefault()
-                      setSelectedIndex(assets.length - 1)
-                    }
-                  }}
                 >
                   <img 
                     src={`/api/assets/${asset.id}/thumbnail`} 
