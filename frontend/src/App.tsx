@@ -58,9 +58,13 @@ function App() {
       setLastSearchPath(path)
       // Reset the edit flag after successful search
       setSearchFieldEdited(false)
-      // Focus on first thumbnail after search completes (if not already in modal)
+      // Focus on grid after search completes (if not already in modal)
       if (!selectedAsset && assetsToSet.length > 0) {
         setSelectedIndex(0)
+        // Small delay to ensure DOM is updated
+        setTimeout(() => {
+          gridRef.current?.focus()
+        }, 0)
       }
     } catch (err) {
       console.error('Fetch error:', err)
@@ -85,6 +89,14 @@ function App() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchPath(e.target.value)
     setSearchFieldEdited(true)
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      // Perform search and focus on grid
+      fetchAssets(searchPath)
+    }
   }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -170,6 +182,7 @@ function App() {
           type="text"
           value={searchPath}
           onChange={handleSearchChange}
+          onKeyDown={handleSearchKeyDown}
           placeholder="Enter search path (e.g., rantatalo)"
           className="search-input"
         />
