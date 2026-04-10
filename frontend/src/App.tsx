@@ -208,7 +208,7 @@ function App() {
         {error && <p className="error-message">Error: {error}</p>}
       </div>
 
-      {/* Fullscreen Modal - Original Image Only */}
+      {/* Fullscreen Modal - Original Asset (Video or Image) */}
       {selectedAsset && (
         <div 
           className="modal-backdrop"
@@ -218,11 +218,23 @@ function App() {
             className="modal-image-container"
             onClick={(e) => e.stopPropagation()}
           >
-            <img 
-              src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`} 
-              alt={selectedAsset.originalFileName}
-              className="modal-image"
-            />
+            {/* Video assets show the original video file */}
+            {selectedAsset.type === 'VIDEO' && (
+              <video 
+                src={`/api/assets/${selectedAsset.id}/original`}
+                controls
+                autoPlay
+                className="modal-image"
+              />
+            )}
+            {/* Image assets show the preview */}
+            {selectedAsset.type !== 'VIDEO' && (
+              <img 
+                src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`} 
+                alt={selectedAsset.originalFileName}
+                className="modal-image"
+              />
+            )}
             {/* Filename overlay */}
             <div className="modal-filename">
               {selectedAsset.originalFileName}
