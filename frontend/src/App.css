@@ -145,6 +145,36 @@ h1 {
   object-fit: contain;
 }
 
+.modal-image-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 100vh;
+  object-fit: contain;
+  display: block;
+}
+
+.modal-click-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 1001;
+  cursor: pointer;
+}
+
+.modal-left-zone {
+  left: 0;
+}
+
+.modal-right-zone {
+  right: 0;
+}
+
 /* Folder Tree Styles */
 .folder-tree-container {
   margin: 20px auto;

@@ -54,6 +54,29 @@ function App() {
   const [folderLoading, setFolderLoading] = useState(false)
   const [folderError, setFolderError] = useState<string | null>(null)
   
+  // Navigation functions
+  const goToNextAsset = () => {
+    if (selectedIndex === assets.length - 1 && hasMore) {
+      fetchAssets(searchPath, currentPage + 1)
+    } else {
+      const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : selectedIndex
+      setSelectedIndex(nextIndex)
+      setSelectedAsset(assets[nextIndex])
+    }
+  }
+
+  const goToPrevAsset = () => {
+    if (selectedIndex > 0) {
+      setSelectedIndex(selectedIndex - 1)
+      setSelectedAsset(assets[selectedIndex - 1])
+    }
+  }
+
+  const goToFirstAsset = () => {
+    setSelectedIndex(0)
+    setSelectedAsset(assets[0])
+  }
+
   const fetchAssets = async (path: string, page: number = 1) => {
     try {
       setLoading(true)
@@ -113,7 +136,7 @@ function App() {
         const data = await response.json() as FolderNode[]
         console.log('Folder tree data received:', data)
         setFolderTree(data)
-        setInfo(`Loaded folder tree`)
+        setInfo("Folder tree loaded successfully")
       } catch (err) {
         console.error('Folder fetch error:', err)
         setFolderError(err instanceof Error ? err.message : 'Failed to fetch folders')
@@ -142,23 +165,13 @@ function App() {
           setSelectedAsset(null)
         } else if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT)) {
           e.preventDefault()
-          if (selectedIndex === assets.length - 1 && hasMore) {
-            fetchAssets(searchPath, currentPage + 1)
-          }
-          else {
-            const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : selectedIndex
-            setSelectedIndex(nextIndex)
-            setSelectedAsset(assets[nextIndex])
-          }
+          goToNextAsset()
         } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT)) {
           e.preventDefault()
-          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : 0
-          setSelectedIndex(prevIndex)
-          setSelectedAsset(assets[prevIndex])
+          goToPrevAsset()
         } else if (isKey(e, 'Home', KEYCODES.HOME)) {
           e.preventDefault()
-          setSelectedIndex(0)
-          setSelectedAsset(assets[0])
+          goToFirstAsset()
         }
       } 
     }
@@ -174,7 +187,7 @@ function App() {
       <div className="folder-tree-container">
         {folderLoading && <p>Loading folders...</p>}
         {folderError && <p className="error-message">Error loading folders: {folderError}. Check browser console for details.</p>}
-        {!folderError && folderTree.length > 0 && (
+        {assets.length && !folderError && folderTree.length > 0 && (
           <LegacyTree 
             data={folderTree}
             onNodeClick={(path) => {
@@ -191,7 +204,7 @@ function App() {
 
       <div className="status-messages">
         {loading && <p>Loading assets...</p>}
-        {info && <p className="info-message">{info}</p>}
+        {info && <p className="info-message">Info: {info}</p>}
         {error && <p className="error-message">Error: {error}</p>}
       </div>
 
@@ -201,12 +214,32 @@ function App() {
           className="modal-backdrop"
           onClick={() => setSelectedAsset(null)}
         >
-          <img 
-            src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`} 
-            alt={selectedAsset.originalFileName}
-            className="modal-image"
+          <div 
+            className="modal-image-container"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            <img 
+              src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`} 
+              alt={selectedAsset.originalFileName}
+              className="modal-image"
+            />
+            {/* Left half click handler */}
+            <div 
+              className="modal-click-zone modal-left-zone"
+              onClick={(e) => {
+                e.stopPropagation()
+                goToPrevAsset()
+              }}
+            />
+            {/* Right half click handler */}
+            <div 
+              className="modal-click-zone modal-right-zone"
+              onClick={(e) => {
+                e.stopPropagation()
+                goToNextAsset()
+              }}
+            />
+          </div>
         </div>
       )}
     </>
