@@ -113,9 +113,31 @@ app.post("/search", async (req, res) => {
   }
 });
 
+// Helper function to find common prefix among folder paths
+function findCommonPrefix(folderPaths: string[]): string {
+  if (folderPaths.length === 0) return "";
+  
+  // Sort paths to get shortest first
+  const sorted = [...folderPaths].sort((a, b) => a.length - b.length);
+  let prefix = sorted[0];
+  
+  for (const path of sorted) {
+    while (path.indexOf(prefix) !== 0) {
+      prefix = prefix.slice(0, -1);
+      if (prefix === "") return "";
+    }
+  }
+  
+  return prefix;
+}
+
 // Helper function to build React Arborist tree from folder paths
 function buildFolderTree(folderPaths: string[]): any[] {
   const root: Map<string, any> = new Map();
+  
+  // Find and remove common prefix
+  const commonPrefix = findCommonPrefix(folderPaths);
+  console.log("Common prefix found:", commonPrefix);
   
   // Initialize root node
   root.set("/", {
@@ -130,7 +152,13 @@ function buildFolderTree(folderPaths: string[]): any[] {
   for (const folderPath of folderPaths) {
     if (!folderPath || folderPath === "/") continue;
     
-    const parts = folderPath.split("/").filter((p) => p.length > 0);
+    // Strip common prefix
+    let strippedPath = folderPath;
+    if (commonPrefix && folderPath.startsWith(commonPrefix)) {
+      strippedPath = folderPath.substring(commonPrefix.length);
+    }
+    
+    const parts = strippedPath.split("/").filter((p) => p.length > 0);
     let currentPath = "";
     
     for (let i = 0; i < parts.length; i++) {
