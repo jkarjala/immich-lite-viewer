@@ -187,7 +187,7 @@ function App() {
       <div className="folder-tree-container">
         {folderLoading && <p>Loading folders...</p>}
         {folderError && <p className="error-message">Error loading folders: {folderError}. Check browser console for details.</p>}
-        {assets.length && !folderError && folderTree.length > 0 && (
+        {!folderError && folderTree.length > 0 && (
           <LegacyTree 
             data={folderTree}
             onNodeClick={(path) => {
