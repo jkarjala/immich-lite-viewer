@@ -3,7 +3,7 @@ import path from "path";
 import multer from "multer";
 import FormData from "form-data";
 import fetch from "node-fetch";
-import { AssetOrder, init, searchAssets } from "@immich/sdk";
+import { AssetOrder, getAssetsByOriginalPath, getUniqueOriginalPaths, init, searchAssets } from "@immich/sdk";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -110,6 +110,72 @@ app.post("/search", async (req, res) => {
   } catch (err: any) {
     console.error("Search error:", err);
     res.status(500).json({ error: "Search failed", details: err.message });
+  }
+});
+
+// Helper function to build React Arborist tree from folder paths
+function buildFolderTree(folderPaths: string[]): any[] {
+  const root: Map<string, any> = new Map();
+  
+  // Initialize root node
+  root.set("/", {
+    id: "root",
+    name: "Root",
+    path: "/",
+    isFolder: true,
+    children: [],
+  });
+  
+  // Process each folder path
+  for (const folderPath of folderPaths) {
+    if (!folderPath || folderPath === "/") continue;
+    
+    const parts = folderPath.split("/").filter((p) => p.length > 0);
+    let currentPath = "";
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      currentPath = currentPath + "/" + part;
+      
+      // Check if node already exists
+      if (!root.has(currentPath)) {
+        const parentNodePath = currentPath.substring(0, currentPath.lastIndexOf("/"));
+        const parentNode = root.get(parentNodePath) || root.get("/");
+        
+        const node = {
+          id: currentPath,
+          name: part,
+          path: currentPath,
+          isFolder: true,
+          children: [],
+        };
+        
+        root.set(currentPath, node);
+        parentNode.children.push(node);
+      }
+    }
+  }
+  
+  return root.get("/")?.children || [];
+}
+
+// Folders endpoint - retrieves folder paths and converts to React Arborist tree
+app.get("/folders", async (req, res) => {
+  try {
+    console.log("Fetching unique folder paths from Immich using SDK");
+    
+    // Use Immich SDK to get unique folder paths
+    const folderPaths = await getUniqueOriginalPaths();
+    
+    console.log(`Received ${folderPaths.length} unique folder paths`);
+    
+    // Build React Arborist compatible tree structure
+    const treeData = buildFolderTree(folderPaths);
+    
+    res.status(200).json(treeData);
+  } catch (err: any) {
+    console.error("Folders endpoint error:", err);
+    res.status(500).json({ error: "Folders endpoint failed", details: err.message });
   }
 });
 

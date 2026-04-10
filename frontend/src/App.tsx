@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react'
-
+import { useEffect, useState } from 'react'
+import { LegacyTree, FolderNode } from './LegacyTree'
 import './App.css'
 
 // Helper function to check key with legacy browser support
@@ -39,22 +39,26 @@ interface SearchResponse {
   }
 }
 
+
 function App() {
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchPath, setSearchPath] = useState('rantatalo')
-  const [lastSearchPath, setLastSearchPath] = useState('rantatalo')
+  const [info, setInfo] = useState<string | null>(null)
+  const [searchPath, setSearchPath] = useState('')
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
-  const [searchFieldEdited, setSearchFieldEdited] = useState(false)
-  const gridRef = useRef<HTMLDivElement>(null)
-
-  const fetchAssets = async (path: string) => {
+  const [currentPage, setCurrentPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [folderTree, setFolderTree] = useState<FolderNode[]>([])
+  const [folderLoading, setFolderLoading] = useState(false)
+  const [folderError, setFolderError] = useState<string | null>(null)
+  
+  const fetchAssets = async (path: string, page: number = 1) => {
     try {
       setLoading(true)
       setError(null)
-      
+      const ASSETS_TO_FETCH = 10;
       const response = await fetch('/search', {
         method: 'POST',
         headers: {
@@ -62,31 +66,30 @@ function App() {
         },
         body: JSON.stringify({
           originalPath: path,
-          page: 1,
-          size: 1000
+          page: page,
+          size: ASSETS_TO_FETCH,
         }),
       })
-
       if (!response.ok) {
         throw new Error(`Search failed with status ${response.status}`)
       }
-
       const data = (await response.json()) as SearchResponse      
       const assetsToSet = data.assets?.items || []
-      console.log('Setting assets to:', assetsToSet)
-      setAssets(assetsToSet)
-      // Update the last search path after successful search
-      setLastSearchPath(path)
-      // Reset the edit flag after successful search
-      setSearchFieldEdited(false)
-      // Focus on grid after search completes (if not already in modal)
-      if (!selectedAsset && assetsToSet.length > 0) {
-        setSelectedIndex(0)
-        // Small delay to ensure DOM is updated
-        setTimeout(() => {
-          gridRef.current?.focus()
-        }, 0)
-      }
+      
+      setHasMore(assetsToSet.length === ASSETS_TO_FETCH)
+      setAssets(prev => {
+        const newAssets = page === 1 ? assetsToSet : [...prev, ...assetsToSet]
+        if (page > 1 && prev.length > 0 && assetsToSet.length > 0) {
+          setSelectedIndex(prev.length)
+          setSelectedAsset(assetsToSet[0])
+        } else {
+          setSelectedIndex(0)
+          setSelectedAsset(newAssets[0]) // Use newAssets instead of old assets array
+        }
+        setInfo(`${newAssets.length} assets after page ${page} fetch`)
+        return newAssets
+      })
+      setCurrentPage(page)
     } catch (err) {
       console.error('Fetch error:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch assets')
@@ -96,36 +99,33 @@ function App() {
   }
 
   useEffect(() => {
-    // Initial load with default search path
-    fetchAssets(searchPath)
+    // Fetch folder tree on component mount
+    const fetchFolderTree = async () => {
+      try {
+        setFolderLoading(true)
+        setFolderError(null)
+
+        const response = await fetch('/folders')
+        if (!response.ok) {
+          throw new Error(`Failed to fetch folders: ${response.status} ${response.statusText}`)
+        }
+        
+        const data = await response.json() as FolderNode[]
+        console.log('Folder tree data received:', data)
+        setFolderTree(data)
+        setInfo("Folder tree loaded successfully")
+      } catch (err) {
+        console.error('Folder fetch error:', err)
+        setFolderError(err instanceof Error ? err.message : 'Failed to fetch folders')
+      } finally {
+        setFolderLoading(false)
+      }
+    }
+    
+    fetchFolderTree()
   }, [])
 
-  useEffect(() => {
-    // Focus on grid after successful search if not in modal
-    if (assets.length > 0 && !selectedAsset) {
-      gridRef.current?.focus()
-    }
-  }, [assets, selectedAsset])
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchPath(e.target.value)
-    setSearchFieldEdited(true)
-  }
-
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isKey(e, 'Enter', KEYCODES.ENTER)) {
-      e.preventDefault()
-      // Perform search and focus on grid
-      fetchAssets(searchPath)
-    }
-  }
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Only trigger search when user clicks search button
-    fetchAssets(searchPath)
-  }
-
+ 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't capture keys when focus is inside the search form
@@ -142,107 +142,57 @@ function App() {
           setSelectedAsset(null)
         } else if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT)) {
           e.preventDefault()
-          const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
-          setSelectedIndex(nextIndex)
-          setSelectedAsset(assets[nextIndex])
+          if (selectedIndex === assets.length - 1 && hasMore) {
+            fetchAssets(searchPath, currentPage + 1)
+          }
+          else {
+            const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : selectedIndex
+            setSelectedIndex(nextIndex)
+            setSelectedAsset(assets[nextIndex])
+          }
         } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT)) {
           e.preventDefault()
-          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
+          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : 0
           setSelectedIndex(prevIndex)
           setSelectedAsset(assets[prevIndex])
         } else if (isKey(e, 'Home', KEYCODES.HOME)) {
           e.preventDefault()
           setSelectedIndex(0)
           setSelectedAsset(assets[0])
-        } else if (isKey(e, 'End', KEYCODES.END)) {
-          e.preventDefault()
-          setSelectedIndex(assets.length - 1)
-          setSelectedAsset(assets[assets.length - 1])
         }
       } 
-      // If no modal and assets exist, handle grid navigation
-      else if (!selectedAsset && assets.length > 0) {
-        if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT)) {
-          e.preventDefault()
-          const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : 0
-          setSelectedIndex(nextIndex)
-        } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT)) {
-          e.preventDefault()
-          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : assets.length - 1
-          setSelectedIndex(prevIndex)
-        } else if (isKey(e, 'Enter', KEYCODES.ENTER)) {
-          e.preventDefault()
-          // If search field was edited, focus on it; otherwise open first asset
-          if (searchFieldEdited) {
-            const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
-            searchInput?.focus()
-          } else {
-            setSelectedAsset(assets[selectedIndex])
-            setSearchFieldEdited(false)
-          }
-        } else if (isKey(e, 'Home', KEYCODES.HOME)) {
-          e.preventDefault()
-          setSelectedIndex(0)
-        } else if (isKey(e, 'End', KEYCODES.END)) {
-          e.preventDefault()
-          setSelectedIndex(assets.length - 1)
-        }
-      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedAsset, selectedIndex, assets, searchFieldEdited])
+  }, [selectedAsset, selectedIndex, assets])
 
   return (
     <>
-      <h1>Immich Lite Viewer</h1>
-      <form onSubmit={handleSearchSubmit} className="search-form">
-        <input
-          type="text"
-          value={searchPath}
-          onChange={handleSearchChange}
-          onKeyDown={handleSearchKeyDown}
-          placeholder="Enter search path (e.g., rantatalo)"
-          className="search-input"
-        />
-        <button type="submit" className="search-button">Search</button>
-      </form>
-      <div className="card">
-        {loading ? (
-          <p>Loading assets...</p>
-        ) : error ? (
-          <p className="error-message">Error: {error}</p>
-        ) : assets.length > 0 ? (
-          <div className="assets-section">
-            <h2>Assets with "{lastSearchPath}" in path ({assets.length})</h2>
-            <div 
-              ref={gridRef}
-              className="assets-grid"
-              tabIndex={0}
-            >
-              {assets.map((asset, index) => (
-                <div 
-                  key={asset.id} 
-                  className={`asset-item ${selectedIndex === index ? 'selected' : ''}`}
-                  title={asset.originalFileName}
-                  onClick={() => { setSelectedIndex(index); setSelectedAsset(asset); }}
-                >
-                  <img 
-                    src={`/api/assets/${asset.id}/thumbnail`} 
-                    alt={asset.originalFileName}
-                    className="asset-thumbnail"
-                  />
-                  <div className="asset-filename">
-                    {asset.originalFileName}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <p className="no-assets-text">No assets found with "{lastSearchPath}" in path</p>
+      <h1>Immich folder viewer</h1>
+      {/* Folder Tree - Legacy Compatible */}
+      <div className="folder-tree-container">
+        {folderLoading && <p>Loading folders...</p>}
+        {folderError && <p className="error-message">Error loading folders: {folderError}. Check browser console for details.</p>}
+        {assets.length && !folderError && folderTree.length > 0 && (
+          <LegacyTree 
+            data={folderTree}
+            onNodeClick={(path) => {
+              setSelectedAsset(null);
+              setSearchPath(path);
+              fetchAssets(path, 1);
+            }}
+          />
         )}
+        {!folderLoading && !folderError && folderTree.length === 0 && (
+          <p className="no-assets-text">No folders found</p>
+        )}
+      </div>
+
+      <div className="status-messages">
+        {loading && <p>Loading assets...</p>}
+        {info && <p className="info-message">Info: {info}</p>}
+        {error && <p className="error-message">Error: {error}</p>}
       </div>
 
       {/* Fullscreen Modal - Original Image Only */}
