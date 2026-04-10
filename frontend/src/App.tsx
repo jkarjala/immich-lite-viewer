@@ -223,6 +223,10 @@ function App() {
               alt={selectedAsset.originalFileName}
               className="modal-image"
             />
+            {/* Filename overlay */}
+            <div className="modal-filename">
+              {selectedAsset.originalFileName}
+            </div>
             {/* Left half click handler */}
             <div 
               className="modal-click-zone modal-left-zone"
