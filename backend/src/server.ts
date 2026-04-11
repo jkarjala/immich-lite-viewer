@@ -75,7 +75,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve built frontend
 const publicDir = isDev 
   ? path.join(__dirname, "../../frontend/dist")
-  : path.join(__dirname, "../../public");
+  : path.join(__dirname, "../public");
 app.use(express.static(publicDir));
 console.log("Serving frontend from:", publicDir);
 

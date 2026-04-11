@@ -24,6 +24,8 @@ COPY --from=frontend-build /app/frontend/dist ./public
 
 RUN npm install --omit=dev
 
+LABEL org.opencontainers.image.source https://github.com/jkarjala/immich-lite-viewer
+
 ENV PORT=4000
 EXPOSE 4000
 
