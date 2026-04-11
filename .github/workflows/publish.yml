@@ -34,3 +34,4 @@ jobs:
           tags: |
             ghcr.io/jkarjala/immich-lite-viewer:latest
             ghcr.io/jkarjala/immich-lite-viewer:${{ github.sha }}
+            ghcr.io/jkarjala/immich-lite-viewer:build-${{ github.run_number }}
