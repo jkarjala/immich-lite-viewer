@@ -1,6 +1,6 @@
 # Immich Lite Viewer
 
-A lightweight web viewer for browsing Immich photo library assets with search capabilities.
+A lightweight web viewer for browsing Immich photo library assets in a folder structure. Very light-weight to work on browsers like the Chromium 38 in LG OLED B7 SmartTV.
 
 ## ⚠️ Disclaimer
 
@@ -33,7 +33,7 @@ immich-lite-viewer/
 ## Features
 
 - **Asset Search** - Search Immich assets by path, filename, date, and other metadata filters
-- **Thumbnail Gallery** - View assets as an interactive grid of thumbnails
+- **Folder Tree** - Browse assets through an interactive hierarchical folder structure
 - **API Proxy** - Secure proxy to your Immich server with automatic API key injection
 - **Dev Mode** - Run frontend and backend with live reload
 
@@ -131,11 +131,59 @@ Search for assets by metadata.
 ### `/api/*` (ALL METHODS)
 Pass-through proxy to Immich API. All requests are forwarded to your Immich server with automatic API key authentication.
 
+### `/folders` (GET)
+Retrieve folder structure for asset browsing.
+
+**Request:**
+```bash
+GET /folders
+```
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "name": "2024",
+      "path": "/2024",
+      "children": [
+        {
+          "name": "January",
+          "path": "/2024/January",
+          "children": []
+        },
+        {
+          "name": "February",
+          "path": "/2024/February",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "2023",
+      "path": "/2023",
+      "children": [...]
+    }
+  ],
+  "total": 2,
+  "count": 2
+}
+```
+
+**Query Parameters:**
+- `path` (optional): Filter folder structure by starting path
+- `depth` (optional): Maximum depth to traverse (default: unlimited)
+
+**Example with query parameters:**
+```bash
+GET /folders?path=/2024&depth=2
+```
+
 ## Architecture
 
 - **Backend**: Express.js server that proxies requests to Immich API and adds CORS headers
 - **Frontend**: React app using Vite for fast development and builds
-- **Proxy**: Vite dev server proxies `/search` and `/api/*` routes to backend
+- **Proxy**: Vite dev server proxies `/search`, `/api/*`, and `/folders` routes to backend
 
 ## Related Links
 
