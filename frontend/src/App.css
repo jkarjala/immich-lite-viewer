@@ -73,12 +73,12 @@ h1 {
 }
 
 .assets-grid:focus {
-  outline: 3px solid #2196F3;
+  outline: 3px solid #2196f3;
   outline-offset: 4px;
 }
 
 .assets-grid:focus-visible {
-  outline: 3px solid #2196F3;
+  outline: 3px solid #2196f3;
   outline-offset: 4px;
 }
 
@@ -93,8 +93,8 @@ h1 {
 
 .asset-item.selected {
   background-color: #4a90d9;
-  border: 3px solid #2196F3;
-  outline: 3px solid #2196F3;
+  border: 3px solid #2196f3;
+  outline: 3px solid #2196f3;
   outline-offset: 4px;
 }
 
@@ -116,7 +116,7 @@ h1 {
 }
 
 .asset-item.selected .asset-filename {
-  background-color: #2196F3;
+  background-color: #2196f3;
 }
 
 .no-assets-text {
@@ -162,9 +162,9 @@ h1 {
   position: absolute;
   bottom: 10px;
   left: 10px;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.5);
   color: white;
-  padding: 8px 12px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-size: 14px;
   max-width: 80%;

@@ -48,25 +48,18 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [searchPath, setSearchPath] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
   const [folderTree, setFolderTree] = useState<FolderNode[]>([]);
   const [folderLoading, setFolderLoading] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
 
   // Navigation functions
   const goToNextAsset = () => {
-    if (selectedIndex === assets.length - 1 && hasMore) {
-      fetchAssets(searchPath, currentPage + 1);
-    } else {
-      const nextIndex =
-        selectedIndex < assets.length - 1 ? selectedIndex + 1 : selectedIndex;
-      setSelectedIndex(nextIndex);
-      setSelectedAsset(assets[nextIndex]);
-    }
+    const nextIndex =
+      selectedIndex < assets.length - 1 ? selectedIndex + 1 : selectedIndex;
+    setSelectedIndex(nextIndex);
+    setSelectedAsset(assets[nextIndex]);
   };
 
   const goToPrevAsset = () => {
@@ -85,38 +78,51 @@ function App() {
     try {
       setLoading(true);
       setError(null);
-      const ASSETS_TO_FETCH = 10;
-      const response = await fetch("/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          originalPath: path,
-          page: page,
-          size: ASSETS_TO_FETCH,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`Search failed with status ${response.status}`);
-      }
-      const data = (await response.json()) as SearchResponse;
-      const assetsToSet = data.assets?.items || [];
+      const ASSETS_TO_FETCH = 1000;
+      const allAssets: Asset[] = [];
+      let pageToFetch = page;
 
-      setHasMore(assetsToSet.length === ASSETS_TO_FETCH);
-      setAssets((prev) => {
-        const newAssets = page === 1 ? assetsToSet : [...prev, ...assetsToSet];
-        if (page > 1 && prev.length > 0 && assetsToSet.length > 0) {
-          setSelectedIndex(prev.length);
-          setSelectedAsset(assetsToSet[0]);
-        } else {
-          setSelectedIndex(0);
-          setSelectedAsset(newAssets[0]); // Use newAssets instead of old assets array
+      while (true) {
+        const response = await fetch("/search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            originalPath: path,
+            page: pageToFetch,
+            size: ASSETS_TO_FETCH,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error(`Search failed with status ${response.status}`);
         }
-        setInfo(`${newAssets.length} assets after page ${page} fetch`);
-        return newAssets;
-      });
-      setCurrentPage(page);
+
+        const data = (await response.json()) as SearchResponse;
+        const assetsToSet = data.assets?.items || [];
+
+        if (assetsToSet.length === 0) {
+          break;
+        }
+
+        allAssets.push(...assetsToSet);
+
+        if (assetsToSet.length < ASSETS_TO_FETCH) {
+          break;
+        }
+
+        pageToFetch += 1;
+      }
+
+      setAssets(allAssets);
+      if (allAssets.length > 0) {
+        setSelectedIndex(0);
+        setSelectedAsset(allAssets[0]);
+      } else {
+        setSelectedIndex(-1);
+        setSelectedAsset(null);
+      }
+      setInfo(`Loaded ${allAssets.length} assets from ${path}`);
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch assets");
@@ -207,7 +213,6 @@ function App() {
             data={folderTree}
             onNodeClick={(path) => {
               setSelectedAsset(null);
-              setSearchPath(path);
               fetchAssets(path, 1);
             }}
           />
@@ -219,7 +224,7 @@ function App() {
 
       <div className="status-messages">
         {loading && <p>Loading assets...</p>}
-        {info && <p className="info-message">Info: {info}</p>}
+        {info && <p className="info-message">{info}</p>}
         {error && <p className="error-message">Error: {error}</p>}
       </div>
 
@@ -227,7 +232,10 @@ function App() {
       {selectedAsset && (
         <div className="modal-backdrop" onClick={() => setSelectedAsset(null)}>
           {/* Filename overlay */}
-          <div className="modal-filename">{selectedAsset.originalFileName}</div>
+          <div className="modal-filename">
+            {selectedIndex + 1}/{assets.length} -{" "}
+            {selectedAsset.originalFileName}
+          </div>
 
           <div
             className="modal-image-container"
