@@ -45,7 +45,6 @@ interface SearchResponse {
 
 function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -77,8 +76,8 @@ function App() {
 
   const fetchAssets = async (path: string, page: number = 1) => {
     try {
-      setLoading(true);
       setError(null);
+      setInfo(`Loading ${path}...`);
       const ASSETS_TO_FETCH = 1000;
       const allAssets: Asset[] = [];
       let pageToFetch = page;
@@ -127,8 +126,6 @@ function App() {
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch assets");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -301,7 +298,6 @@ function App() {
       </div>
 
       <div className="status-messages">
-        {loading && <p>Loading assets...</p>}
         {info && <p className="info-message">{info}</p>}
         {error && <p className="error-message">Error: {error}</p>}
       </div>
