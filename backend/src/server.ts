@@ -3,7 +3,13 @@ import path from "path";
 import multer from "multer";
 import FormData from "form-data";
 import fetch from "node-fetch";
-import { AssetOrder, getAssetsByOriginalPath, getUniqueOriginalPaths, init, searchAssets } from "@immich/sdk";
+import {
+  AssetOrder,
+  getAssetsByOriginalPath,
+  getUniqueOriginalPaths,
+  init,
+  searchAssets,
+} from "@immich/sdk";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +35,7 @@ async function immichRequest(
   path: string,
   method: string,
   body?: any,
-  headers: Record<string, any> = {}
+  headers: Record<string, any> = {},
 ) {
   const targetUrl = IMMICH_URL + path;
   const defaultHeaders: Record<string, any> = {
@@ -43,21 +49,29 @@ async function immichRequest(
     headers: defaultHeaders,
     body,
   });
-  
+
   const contentType = response.headers.get("content-type") || "text/plain";
-  
+
   // For binary responses (images, etc), return as buffer
-  if (contentType.includes("image") || contentType.includes("video") || contentType.includes("audio")) {
+  if (
+    contentType.includes("image") ||
+    contentType.includes("video") ||
+    contentType.includes("audio")
+  ) {
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    console.log("Response from Immich:", response.status, `${buffer.length} bytes (${contentType})`);
+    console.log(
+      "Response from Immich:",
+      response.status,
+      `${buffer.length} bytes (${contentType})`,
+    );
     return {
       status: response.status,
       contentType,
       buffer,
     };
   }
-  
+
   // For text responses, return as text
   const resp_body = await response.text();
   console.log("Response from Immich:", response.status, resp_body.length);
@@ -73,7 +87,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve built frontend
-const publicDir = isDev 
+const publicDir = isDev
   ? path.join(__dirname, "../../frontend/dist")
   : path.join(__dirname, "../public");
 app.use(express.static(publicDir));
@@ -84,17 +98,19 @@ app.post("/search", async (req, res) => {
   try {
     // Validate request body
     const { originalPath, page = 1, size = 1000 } = req.body;
-    
+
     if (!originalPath) {
-      return res.status(400).json({ error: "Missing required parameter: originalPath" });
+      return res
+        .status(400)
+        .json({ error: "Missing required parameter: originalPath" });
     }
-    
+
     console.log("Executing search with params:", { originalPath, page, size });
-    
+
     // Convert pagination format: page/size → offset/limit for SDK
     const offset = (page - 1) * size;
     const limit = size;
-    
+
     // Use Immich SDK to search assets by path (using MetadataSearchDto structure)
     const results = await searchAssets({
       metadataSearchDto: {
@@ -104,7 +120,7 @@ app.post("/search", async (req, res) => {
         order: AssetOrder.Asc,
       },
     });
-    
+
     // Return results in compatible format
     res.status(200).json(results);
   } catch (err: any) {
@@ -116,29 +132,29 @@ app.post("/search", async (req, res) => {
 // Helper function to find common prefix among folder paths
 function findCommonPrefix(folderPaths: string[]): string {
   if (folderPaths.length === 0) return "";
-  
+
   // Sort paths to get shortest first
   const sorted = [...folderPaths].sort((a, b) => a.length - b.length);
   let prefix = sorted[0];
-  
+
   for (const path of sorted) {
     while (path.indexOf(prefix) !== 0) {
       prefix = prefix.slice(0, -1);
       if (prefix === "") return "";
     }
   }
-  
+
   return prefix;
 }
 
 // Helper function to build React Arborist tree from folder paths
 function buildFolderTree(folderPaths: string[]): any[] {
   const root: Map<string, any> = new Map();
-  
+
   // Find and remove common prefix
   const commonPrefix = findCommonPrefix(folderPaths);
   console.log("Common prefix found:", commonPrefix);
-  
+
   // Initialize root node
   root.set("/", {
     id: "root",
@@ -147,29 +163,32 @@ function buildFolderTree(folderPaths: string[]): any[] {
     isFolder: true,
     children: [],
   });
-  
+
   // Process each folder path
   for (const folderPath of folderPaths) {
     if (!folderPath || folderPath === "/") continue;
-    
+
     // Strip common prefix
     let strippedPath = folderPath;
     if (commonPrefix && folderPath.startsWith(commonPrefix)) {
       strippedPath = folderPath.substring(commonPrefix.length);
     }
-    
+
     const parts = strippedPath.split("/").filter((p) => p.length > 0);
     let currentPath = "";
-    
+
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       currentPath = currentPath + "/" + part;
-      
+
       // Check if node already exists
       if (!root.has(currentPath)) {
-        const parentNodePath = currentPath.substring(0, currentPath.lastIndexOf("/"));
+        const parentNodePath = currentPath.substring(
+          0,
+          currentPath.lastIndexOf("/"),
+        );
         const parentNode = root.get(parentNodePath) || root.get("/");
-        
+
         const node = {
           id: currentPath,
           name: part,
@@ -177,13 +196,13 @@ function buildFolderTree(folderPaths: string[]): any[] {
           isFolder: true,
           children: [],
         };
-        
+
         root.set(currentPath, node);
         parentNode.children.push(node);
       }
     }
   }
-  
+
   return root.get("/")?.children || [];
 }
 
@@ -191,19 +210,21 @@ function buildFolderTree(folderPaths: string[]): any[] {
 app.get("/folders", async (req, res) => {
   try {
     console.log("Fetching unique folder paths from Immich using SDK");
-    
+
     // Use Immich SDK to get unique folder paths
     const folderPaths = await getUniqueOriginalPaths();
-    
+
     console.log(`Received ${folderPaths.length} unique folder paths`);
-    
+
     // Build React Arborist compatible tree structure
     const treeData = buildFolderTree(folderPaths);
-    
+
     res.status(200).json(treeData);
   } catch (err: any) {
     console.error("Folders endpoint error:", err);
-    res.status(500).json({ error: "Folders endpoint failed", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Folders endpoint failed", details: err.message });
   }
 });
 
@@ -236,14 +257,14 @@ app.all("/api/*", upload.any(), async (req, res) => {
     }
 
     console.log("req:", IMMICH_URL + req.path, body, headers);
-    
+
     // Preserve query parameters from the incoming request
-    const queryString = req.url.split('?')[1];
+    const queryString = req.url.split("?")[1];
     const targetPath = queryString ? `${req.path}?${queryString}` : req.path;
-    
+
     const result = await immichRequest(targetPath, req.method, body, headers);
     res.status(result.status).set("Content-Type", result.contentType);
-    
+
     if (result.buffer) {
       res.send(result.buffer);
     } else {

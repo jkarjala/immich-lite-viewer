@@ -1,15 +1,19 @@
-import { useEffect, useState } from 'react'
-import { LegacyTree, FolderNode } from './LegacyTree'
-import './App.css'
+import { useEffect, useState } from "react";
+import { LegacyTree, FolderNode } from "./LegacyTree";
+import "./App.css";
 
 // Helper function to check key with legacy browser support
-const isKey = (e: KeyboardEvent | React.KeyboardEvent, keyName: string, keyCode: number): boolean => {
+const isKey = (
+  e: KeyboardEvent | React.KeyboardEvent,
+  keyName: string,
+  keyCode: number,
+): boolean => {
   // Modern browsers use e.key
-  if (e.key === keyName) return true
+  if (e.key === keyName) return true;
   // Legacy browsers use e.keyCode
-  if ((e as any).keyCode === keyCode) return true
-  return false
-}
+  if ((e as any).keyCode === keyCode) return true;
+  return false;
+};
 
 // Key code mappings for legacy browsers
 const KEYCODES = {
@@ -21,164 +25,170 @@ const KEYCODES = {
   ARROW_DOWN: 40,
   HOME: 36,
   END: 35,
-}
+};
 
 interface Asset {
-  id: string
-  originalFileName: string
-  originalPath: string
-  fileSize?: number
-  type?: string
+  id: string;
+  originalFileName: string;
+  originalPath: string;
+  fileSize?: number;
+  type?: string;
 }
 
 interface SearchResponse {
   assets?: {
-    items: Asset[]
-    total: number
-    count: number
-  }
+    items: Asset[];
+    total: number;
+    count: number;
+  };
 }
 
-
 function App() {
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [info, setInfo] = useState<string | null>(null)
-  const [searchPath, setSearchPath] = useState('')
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [hasMore, setHasMore] = useState(false)
-  const [folderTree, setFolderTree] = useState<FolderNode[]>([])
-  const [folderLoading, setFolderLoading] = useState(false)
-  const [folderError, setFolderError] = useState<string | null>(null)
-  
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [searchPath, setSearchPath] = useState("");
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [folderTree, setFolderTree] = useState<FolderNode[]>([]);
+  const [folderLoading, setFolderLoading] = useState(false);
+  const [folderError, setFolderError] = useState<string | null>(null);
+
   // Navigation functions
   const goToNextAsset = () => {
     if (selectedIndex === assets.length - 1 && hasMore) {
-      fetchAssets(searchPath, currentPage + 1)
+      fetchAssets(searchPath, currentPage + 1);
     } else {
-      const nextIndex = selectedIndex < assets.length - 1 ? selectedIndex + 1 : selectedIndex
-      setSelectedIndex(nextIndex)
-      setSelectedAsset(assets[nextIndex])
+      const nextIndex =
+        selectedIndex < assets.length - 1 ? selectedIndex + 1 : selectedIndex;
+      setSelectedIndex(nextIndex);
+      setSelectedAsset(assets[nextIndex]);
     }
-  }
+  };
 
   const goToPrevAsset = () => {
     if (selectedIndex > 0) {
-      setSelectedIndex(selectedIndex - 1)
-      setSelectedAsset(assets[selectedIndex - 1])
+      setSelectedIndex(selectedIndex - 1);
+      setSelectedAsset(assets[selectedIndex - 1]);
     }
-  }
+  };
 
   const goToFirstAsset = () => {
-    setSelectedIndex(0)
-    setSelectedAsset(assets[0])
-  }
+    setSelectedIndex(0);
+    setSelectedAsset(assets[0]);
+  };
 
   const fetchAssets = async (path: string, page: number = 1) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const ASSETS_TO_FETCH = 10;
-      const response = await fetch('/search', {
-        method: 'POST',
+      const response = await fetch("/search", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           originalPath: path,
           page: page,
           size: ASSETS_TO_FETCH,
         }),
-      })
+      });
       if (!response.ok) {
-        throw new Error(`Search failed with status ${response.status}`)
+        throw new Error(`Search failed with status ${response.status}`);
       }
-      const data = (await response.json()) as SearchResponse      
-      const assetsToSet = data.assets?.items || []
-      
-      setHasMore(assetsToSet.length === ASSETS_TO_FETCH)
-      setAssets(prev => {
-        const newAssets = page === 1 ? assetsToSet : [...prev, ...assetsToSet]
+      const data = (await response.json()) as SearchResponse;
+      const assetsToSet = data.assets?.items || [];
+
+      setHasMore(assetsToSet.length === ASSETS_TO_FETCH);
+      setAssets((prev) => {
+        const newAssets = page === 1 ? assetsToSet : [...prev, ...assetsToSet];
         if (page > 1 && prev.length > 0 && assetsToSet.length > 0) {
-          setSelectedIndex(prev.length)
-          setSelectedAsset(assetsToSet[0])
+          setSelectedIndex(prev.length);
+          setSelectedAsset(assetsToSet[0]);
         } else {
-          setSelectedIndex(0)
-          setSelectedAsset(newAssets[0]) // Use newAssets instead of old assets array
+          setSelectedIndex(0);
+          setSelectedAsset(newAssets[0]); // Use newAssets instead of old assets array
         }
-        setInfo(`${newAssets.length} assets after page ${page} fetch`)
-        return newAssets
-      })
-      setCurrentPage(page)
+        setInfo(`${newAssets.length} assets after page ${page} fetch`);
+        return newAssets;
+      });
+      setCurrentPage(page);
     } catch (err) {
-      console.error('Fetch error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch assets')
+      console.error("Fetch error:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch assets");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     // Fetch folder tree on component mount
     const fetchFolderTree = async () => {
       try {
-        setFolderLoading(true)
-        setFolderError(null)
+        setFolderLoading(true);
+        setFolderError(null);
 
-        const response = await fetch('/folders')
+        const response = await fetch("/folders");
         if (!response.ok) {
-          throw new Error(`Failed to fetch folders: ${response.status} ${response.statusText}`)
+          throw new Error(
+            `Failed to fetch folders: ${response.status} ${response.statusText}`,
+          );
         }
-        
-        const data = await response.json() as FolderNode[]
-        console.log('Folder tree data received:', data)
-        setFolderTree(data)
-        setInfo("Folder tree loaded successfully")
-      } catch (err) {
-        console.error('Folder fetch error:', err)
-        setFolderError(err instanceof Error ? err.message : 'Failed to fetch folders')
-      } finally {
-        setFolderLoading(false)
-      }
-    }
-    
-    fetchFolderTree()
-  }, [])
 
- 
+        const data = (await response.json()) as FolderNode[];
+        console.log("Folder tree data received:", data);
+        setFolderTree(data);
+        setInfo("Folder tree loaded successfully");
+      } catch (err) {
+        console.error("Folder fetch error:", err);
+        setFolderError(
+          err instanceof Error ? err.message : "Failed to fetch folders",
+        );
+      } finally {
+        setFolderLoading(false);
+      }
+    };
+
+    fetchFolderTree();
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't capture keys when focus is inside the search form
       if (!selectedAsset && e.target instanceof HTMLElement) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-          return
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+          return;
         }
       }
 
       // If modal is open, handle navigation within it
       if (selectedAsset) {
-        if (isKey(e, 'Escape', KEYCODES.ESCAPE) || isKey(e, 'ArrowUp', KEYCODES.ARROW_UP)) {
-          e.preventDefault()
-          setSelectedAsset(null)
-        } else if (isKey(e, 'ArrowRight', KEYCODES.ARROW_RIGHT)) {
-          e.preventDefault()
-          goToNextAsset()
-        } else if (isKey(e, 'ArrowLeft', KEYCODES.ARROW_LEFT)) {
-          e.preventDefault()
-          goToPrevAsset()
-        } else if (isKey(e, 'Home', KEYCODES.HOME)) {
-          e.preventDefault()
-          goToFirstAsset()
+        if (
+          isKey(e, "Escape", KEYCODES.ESCAPE) ||
+          isKey(e, "ArrowUp", KEYCODES.ARROW_UP)
+        ) {
+          e.preventDefault();
+          setSelectedAsset(null);
+        } else if (isKey(e, "ArrowRight", KEYCODES.ARROW_RIGHT)) {
+          e.preventDefault();
+          goToNextAsset();
+        } else if (isKey(e, "ArrowLeft", KEYCODES.ARROW_LEFT)) {
+          e.preventDefault();
+          goToPrevAsset();
+        } else if (isKey(e, "Home", KEYCODES.HOME)) {
+          e.preventDefault();
+          goToFirstAsset();
         }
-      } 
-    }
+      }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedAsset, selectedIndex, assets])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedAsset, selectedIndex, assets]);
 
   return (
     <>
@@ -186,9 +196,14 @@ function App() {
       {/* Folder Tree - Legacy Compatible */}
       <div className="folder-tree-container">
         {folderLoading && <p>Loading folders...</p>}
-        {folderError && <p className="error-message">Error loading folders: {folderError}. Check browser console for details.</p>}
+        {folderError && (
+          <p className="error-message">
+            Error loading folders: {folderError}. Check browser console for
+            details.
+          </p>
+        )}
         {!folderError && folderTree.length > 0 && (
-          <LegacyTree 
+          <LegacyTree
             data={folderTree}
             onNodeClick={(path) => {
               setSelectedAsset(null);
@@ -210,17 +225,17 @@ function App() {
 
       {/* Fullscreen Modal - Original Asset (Video or Image) */}
       {selectedAsset && (
-        <div 
-          className="modal-backdrop"
-          onClick={() => setSelectedAsset(null)}
-        >
-          <div 
+        <div className="modal-backdrop" onClick={() => setSelectedAsset(null)}>
+          {/* Filename overlay */}
+          <div className="modal-filename">{selectedAsset.originalFileName}</div>
+
+          <div
             className="modal-image-container"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Video assets show the original video file */}
-            {selectedAsset.type === 'VIDEO' && (
-              <video 
+            {selectedAsset.type === "VIDEO" && (
+              <video
                 src={`/api/assets/${selectedAsset.id}/original`}
                 controls
                 autoPlay
@@ -228,38 +243,34 @@ function App() {
               />
             )}
             {/* Image assets show the preview */}
-            {selectedAsset.type !== 'VIDEO' && (
-              <img 
-                src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`} 
+            {selectedAsset.type !== "VIDEO" && (
+              <img
+                src={`/api/assets/${selectedAsset.id}/thumbnail?size=preview`}
                 alt={selectedAsset.originalFileName}
                 className="modal-image"
               />
             )}
-            {/* Filename overlay */}
-            <div className="modal-filename">
-              {selectedAsset.originalFileName}
-            </div>
             {/* Left half click handler */}
-            <div 
+            <div
               className="modal-click-zone modal-left-zone"
               onClick={(e) => {
-                e.stopPropagation()
-                goToPrevAsset()
+                e.stopPropagation();
+                goToPrevAsset();
               }}
             />
             {/* Right half click handler */}
-            <div 
+            <div
               className="modal-click-zone modal-right-zone"
               onClick={(e) => {
-                e.stopPropagation()
-                goToNextAsset()
+                e.stopPropagation();
+                goToNextAsset();
               }}
             />
           </div>
         </div>
       )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
