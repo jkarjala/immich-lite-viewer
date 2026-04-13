@@ -5,118 +5,22 @@
   text-align: center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 0em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-/* Search Section */
-.search-container {
-  margin-bottom: 20px;
-}
-
 h1 {
   margin-bottom: 20px;
   text-align: center;
 }
 
-.search-form {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  width: fit-content;
-  margin: 10px auto;
-}
-
-.search-input {
-  padding: 8px;
-  width: 300px;
-}
-
-.search-button {
-  padding: 8px 16px;
-}
-
-/* Asset Card */
-.asset-card {
-  padding: 0em;
-}
-
-.loading-text,
 .error-message {
   margin: 10px 0;
-}
-
-.error-message {
   color: red;
 }
 
-.assets-section h2 {
-  margin-bottom: 16px;
+.status-messages {
+  margin: 1rem 0;
 }
 
-.assets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
-  outline: none;
-}
-
-.assets-grid:focus {
-  outline: 3px solid #2196f3;
-  outline-offset: 4px;
-}
-
-.assets-grid:focus-visible {
-  outline: 3px solid #2196f3;
-  outline-offset: 4px;
-}
-
-.asset-item {
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-  background-color: #f0f0f0;
-  transition: all 0.2s ease;
-}
-
-.asset-item.selected {
-  background-color: #4a90d9;
-  border: 3px solid #2196f3;
-  outline: 3px solid #2196f3;
-  outline-offset: 4px;
-}
-
-.asset-thumbnail {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  display: block;
-}
-
-.asset-filename {
-  font-size: 12px;
-  padding: 4px;
-  color: white;
-  max-height: 40px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background-color: rgba(0, 0, 0, 0.7);
-}
-
-.asset-item.selected .asset-filename {
-  background-color: #2196f3;
+.info-message {
+  color: #ccc;
 }
 
 .no-assets-text {
@@ -137,12 +41,6 @@ h1 {
   justify-content: center;
   z-index: 1000;
   cursor: pointer;
-}
-
-.modal-image {
-  max-width: 100%;
-  max-height: 100vh;
-  object-fit: contain;
 }
 
 .modal-image-container {
