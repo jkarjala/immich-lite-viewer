@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { LegacyTree, FolderNode } from "./LegacyTree";
+import { useAssetPreloader, Asset } from "./preloader.ts";
 import "./App.css";
 
 // Helper function to check key with legacy browser support
@@ -27,14 +28,6 @@ const KEYCODES = {
   END: 35,
 };
 
-interface Asset {
-  id: string;
-  originalFileName: string;
-  originalPath: string;
-  fileSize?: number;
-  type?: string;
-}
-
 interface SearchResponse {
   assets?: {
     items: Asset[];
@@ -52,7 +45,11 @@ function App() {
   const [folderTree, setFolderTree] = useState<FolderNode[]>([]);
   const [folderLoading, setFolderLoading] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
-  const preloadedImageRef = useRef<Map<string, string>>(new Map());
+  const renderedImageSrc = useAssetPreloader(
+    selectedAsset,
+    selectedIndex,
+    assets,
+  );
 
   // Navigation functions
   const goToNextAsset = () => {
@@ -193,83 +190,6 @@ function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedAsset, selectedIndex, assets]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const cleanupStalePreloads = () => {
-      const currentId = selectedAsset?.id;
-      const nextId =
-        selectedIndex >= 0 && selectedIndex + 1 < assets.length
-          ? assets[selectedIndex + 1].id
-          : undefined;
-
-      preloadedImageRef.current.forEach((url, id) => {
-        if (id !== currentId && id !== nextId) {
-          URL.revokeObjectURL(url);
-          preloadedImageRef.current.delete(id);
-        }
-      });
-    };
-
-    const preloadNextImage = async () => {
-      cleanupStalePreloads();
-
-      if (selectedIndex < 0 || selectedIndex + 1 >= assets.length) {
-        return;
-      }
-
-      const nextAsset = assets[selectedIndex + 1];
-      if (nextAsset.type === "VIDEO") {
-        return;
-      }
-
-      if (preloadedImageRef.current.has(nextAsset.id)) {
-        return;
-      }
-
-      const preloadUrl = `/api/assets/${nextAsset.id}/thumbnail?size=preview`;
-
-      try {
-        const response = await fetch(preloadUrl);
-        if (!isActive || !response.ok) {
-          return;
-        }
-
-        const blob = await response.blob();
-        if (!isActive) {
-          return;
-        }
-
-        const objectUrl = URL.createObjectURL(blob);
-        preloadedImageRef.current.set(nextAsset.id, objectUrl);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") {
-          return;
-        }
-        console.error("Preload error:", err);
-      }
-    };
-
-    preloadNextImage();
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedAsset, selectedIndex, assets]);
-
-  useEffect(() => {
-    return () => {
-      preloadedImageRef.current.forEach((url) => URL.revokeObjectURL(url));
-      preloadedImageRef.current.clear();
-    };
-  }, []);
-
-  const renderedImageSrc =
-    selectedAsset && selectedAsset.type !== "VIDEO"
-      ? preloadedImageRef.current.get(selectedAsset.id) ||
-        `/api/assets/${selectedAsset.id}/thumbnail?size=preview`
-      : undefined;
 
   return (
     <>
