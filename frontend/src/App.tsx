@@ -136,15 +136,20 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (selectedAsset && modalImageRef.current) {
-      const activeElement = document.activeElement as HTMLElement | null;
-      if (activeElement?.closest(".legacy-tree-container")) {
+    try {
+      if (selectedAsset && modalImageRef.current) {
+        const activeElement = document.activeElement as HTMLElement | null;
         lastFocusedTreeItemRef.current = activeElement;
+        modalImageRef.current.focus();
+      } else if (!selectedAsset && lastFocusedTreeItemRef.current) {
+        lastFocusedTreeItemRef.current.focus();
+        lastFocusedTreeItemRef.current = null;
       }
-      modalImageRef.current.focus();
-    } else if (!selectedAsset && lastFocusedTreeItemRef.current) {
-      lastFocusedTreeItemRef.current.focus();
-      lastFocusedTreeItemRef.current = null;
+    } catch (err) {
+      setError(
+        "focus error: " +
+          (err instanceof Error ? err.message : "Unknown error"),
+      );
     }
   }, [selectedAsset]);
 

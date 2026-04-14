@@ -49,10 +49,10 @@ h1 {
   cursor: pointer;
 }
 
-.modal-image-container:focus,
-.modal-image-container:focus-visible {
+.modal-image-container:focus {
   outline: none;
   box-shadow: none;
+  color: black;
 }
 
 .modal-image {
