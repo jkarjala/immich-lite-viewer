@@ -135,13 +135,6 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture keys when focus is inside the search form
-      if (!selectedAsset && e.target instanceof HTMLElement) {
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
-          return;
-        }
-      }
-
       // If modal is open, handle navigation within it
       if (selectedAsset) {
         if (isKey(e, "Escape") || isKey(e, "ArrowUp")) {
