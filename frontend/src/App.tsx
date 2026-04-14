@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LegacyTree, FolderNode } from "./LegacyTree";
 import { isKey } from "./keyboard";
 import { useAssetPreloader, Asset } from "./preloader.ts";
@@ -21,6 +21,8 @@ function App() {
   const [folderTree, setFolderTree] = useState<FolderNode[]>([]);
   const [folderLoading, setFolderLoading] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
+  const modalImageRef = useRef<HTMLDivElement | null>(null);
+  const lastFocusedTreeItemRef = useRef<HTMLElement | null>(null);
   const renderedImageSrc = useAssetPreloader(
     selectedAsset,
     selectedIndex,
@@ -134,28 +136,17 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // If modal is open, handle navigation within it
-      if (selectedAsset) {
-        if (isKey(e, "Escape") || isKey(e, "ArrowUp")) {
-          e.preventDefault();
-          setSelectedAsset(null);
-        } else if (isKey(e, "ArrowRight")) {
-          e.preventDefault();
-          goToNextAsset();
-        } else if (isKey(e, "ArrowLeft")) {
-          e.preventDefault();
-          goToPrevAsset();
-        } else if (isKey(e, "Home")) {
-          e.preventDefault();
-          goToFirstAsset();
-        }
+    if (selectedAsset && modalImageRef.current) {
+      const activeElement = document.activeElement as HTMLElement | null;
+      if (activeElement?.closest(".legacy-tree-container")) {
+        lastFocusedTreeItemRef.current = activeElement;
       }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedAsset, selectedIndex, assets]);
+      modalImageRef.current.focus();
+    } else if (!selectedAsset && lastFocusedTreeItemRef.current) {
+      lastFocusedTreeItemRef.current.focus();
+      lastFocusedTreeItemRef.current = null;
+    }
+  }, [selectedAsset]);
 
   return (
     <>
@@ -199,7 +190,31 @@ function App() {
 
           <div
             className="modal-image-container"
-            onClick={(e) => e.stopPropagation()}
+            ref={modalImageRef}
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.currentTarget.focus();
+            }}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+
+              if (selectedAsset) {
+                if (isKey(e, "Escape") || isKey(e, "ArrowUp")) {
+                  e.preventDefault();
+                  setSelectedAsset(null);
+                } else if (isKey(e, "ArrowRight")) {
+                  e.preventDefault();
+                  goToNextAsset();
+                } else if (isKey(e, "ArrowLeft")) {
+                  e.preventDefault();
+                  goToPrevAsset();
+                } else if (isKey(e, "Home")) {
+                  e.preventDefault();
+                  goToFirstAsset();
+                }
+              }
+            }}
           >
             {/* Video assets show the original video file */}
             {selectedAsset.type === "VIDEO" && (
