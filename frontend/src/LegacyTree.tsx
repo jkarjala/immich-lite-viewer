@@ -1,5 +1,6 @@
 // LegacyTree.tsx - ES5 compatible for legacy browsers used in Smart TVs etc
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
+import { isKey } from "./keyboard";
 
 export interface FolderNode {
   id: string;
@@ -57,30 +58,28 @@ function LegacyTreeNode({ node, level = 0, onNodeClick }: LegacyTreeNodeProps) {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
-    const rawKey = event.key || String.fromCharCode(event.keyCode || 0);
-    const key = rawKey === " " || rawKey === "Spacebar" ? " " : rawKey;
     const current = event.currentTarget as HTMLElement;
 
-    if (key === "Enter" || key === " ") {
+    if (isKey(event, "Enter") || isKey(event, " ")) {
       event.preventDefault();
       handleClick();
       return;
     }
 
-    if (key === "ArrowDown" || event.keyCode === 40) {
+    if (isKey(event, "ArrowDown")) {
       event.preventDefault();
       focusTreeItem(current, "next");
       return;
     }
 
-    if (key === "ArrowUp" || event.keyCode === 38) {
+    if (isKey(event, "ArrowUp")) {
       event.preventDefault();
       focusTreeItem(current, "previous");
       return;
     }
 
     if (
-      (key === "ArrowRight" || event.keyCode === 39) &&
+      isKey(event, "ArrowRight") &&
       node.children &&
       node.children.length > 0
     ) {
@@ -93,7 +92,7 @@ function LegacyTreeNode({ node, level = 0, onNodeClick }: LegacyTreeNodeProps) {
       return;
     }
 
-    if (key === "ArrowLeft" || event.keyCode === 37) {
+    if (isKey(event, "ArrowLeft")) {
       event.preventDefault();
       if (expanded) {
         setExpanded(false);

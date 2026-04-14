@@ -1,32 +1,8 @@
 import { useEffect, useState } from "react";
 import { LegacyTree, FolderNode } from "./LegacyTree";
+import { isKey } from "./keyboard";
 import { useAssetPreloader, Asset } from "./preloader.ts";
 import "./App.css";
-
-// Helper function to check key with legacy browser support
-const isKey = (
-  e: KeyboardEvent | React.KeyboardEvent,
-  keyName: string,
-  keyCode: number,
-): boolean => {
-  // Modern browsers use e.key
-  if (e.key === keyName) return true;
-  // Legacy browsers use e.keyCode
-  if ((e as any).keyCode === keyCode) return true;
-  return false;
-};
-
-// Key code mappings for legacy browsers
-const KEYCODES = {
-  ENTER: 13,
-  ESCAPE: 27,
-  ARROW_LEFT: 37,
-  ARROW_UP: 38,
-  ARROW_RIGHT: 39,
-  ARROW_DOWN: 40,
-  HOME: 36,
-  END: 35,
-};
 
 interface SearchResponse {
   assets?: {
@@ -168,19 +144,16 @@ function App() {
 
       // If modal is open, handle navigation within it
       if (selectedAsset) {
-        if (
-          isKey(e, "Escape", KEYCODES.ESCAPE) ||
-          isKey(e, "ArrowUp", KEYCODES.ARROW_UP)
-        ) {
+        if (isKey(e, "Escape") || isKey(e, "ArrowUp")) {
           e.preventDefault();
           setSelectedAsset(null);
-        } else if (isKey(e, "ArrowRight", KEYCODES.ARROW_RIGHT)) {
+        } else if (isKey(e, "ArrowRight")) {
           e.preventDefault();
           goToNextAsset();
-        } else if (isKey(e, "ArrowLeft", KEYCODES.ARROW_LEFT)) {
+        } else if (isKey(e, "ArrowLeft")) {
           e.preventDefault();
           goToPrevAsset();
-        } else if (isKey(e, "Home", KEYCODES.HOME)) {
+        } else if (isKey(e, "Home")) {
           e.preventDefault();
           goToFirstAsset();
         }
