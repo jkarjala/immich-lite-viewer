@@ -270,6 +270,7 @@ function App() {
               if (selectedAsset) {
                 if (isKey(e, "Escape") || isKey(e, "ArrowUp")) {
                   e.preventDefault();
+                  stopSlideshow();
                   setSelectedAsset(null);
                 } else if (isKey(e, "ArrowRight")) {
                   e.preventDefault();
