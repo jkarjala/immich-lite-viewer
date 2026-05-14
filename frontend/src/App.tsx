@@ -18,6 +18,8 @@ function App() {
   const [info, setInfo] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [isSlideshow, setIsSlideshow] = useState(false);
+  const slideshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [folderTree, setFolderTree] = useState<FolderNode[]>([]);
   const [folderLoading, setFolderLoading] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
@@ -48,6 +50,40 @@ function App() {
     setSelectedIndex(0);
     setSelectedAsset(assets[0]);
   };
+
+  const startSlideshow = () => {
+    if (assets.length === 0) return;
+    setIsSlideshow(true);
+  };
+
+  const stopSlideshow = () => {
+    setIsSlideshow(false);
+    if (slideshowTimerRef.current) {
+      clearTimeout(slideshowTimerRef.current);
+      slideshowTimerRef.current = null;
+    }
+  };
+
+  // Auto-advance slideshow
+  useEffect(() => {
+    if (!isSlideshow || assets.length === 0) return;
+
+    slideshowTimerRef.current = setTimeout(() => {
+      if (selectedIndex < assets.length - 1) {
+        goToNextAsset();
+      } else {
+        // Loop back to start
+        setSelectedIndex(0);
+        setSelectedAsset(assets[0]);
+      }
+    }, 5000);
+
+    return () => {
+      if (slideshowTimerRef.current) {
+        clearTimeout(slideshowTimerRef.current);
+      }
+    };
+  }, [isSlideshow, selectedIndex, assets]);
 
   const fetchAssets = async (path: string, page: number = 1) => {
     try {
@@ -193,6 +229,33 @@ function App() {
             {selectedAsset.originalFileName}
           </div>
 
+          {/* Slideshow controls */}
+          <div className="modal-controls">
+            {!isSlideshow ? (
+              <button
+                className="modal-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startSlideshow();
+                }}
+                title="Start slideshow"
+              >
+                ▶ Slideshow
+              </button>
+            ) : (
+              <button
+                className="modal-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  stopSlideshow();
+                }}
+                title="Stop slideshow"
+              >
+                ■ Stop
+              </button>
+            )}
+          </div>
+
           <div
             className="modal-image-container"
             ref={modalImageRef}
@@ -210,12 +273,15 @@ function App() {
                   setSelectedAsset(null);
                 } else if (isKey(e, "ArrowRight")) {
                   e.preventDefault();
+                  stopSlideshow();
                   goToNextAsset();
                 } else if (isKey(e, "ArrowLeft")) {
                   e.preventDefault();
+                  stopSlideshow();
                   goToPrevAsset();
                 } else if (isKey(e, "Home")) {
                   e.preventDefault();
+                  stopSlideshow();
                   goToFirstAsset();
                 }
               }
@@ -243,6 +309,7 @@ function App() {
               className="modal-click-zone modal-left-zone"
               onClick={(e) => {
                 e.stopPropagation();
+                stopSlideshow();
                 goToPrevAsset();
               }}
             />
@@ -251,6 +318,7 @@ function App() {
               className="modal-click-zone modal-right-zone"
               onClick={(e) => {
                 e.stopPropagation();
+                stopSlideshow();
                 goToNextAsset();
               }}
             />

@@ -78,6 +78,31 @@ h1 {
   z-index: 1002;
 }
 
+/* Modal controls */
+.modal-controls {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 1003;
+  display: flex;
+  gap: 8px;
+}
+
+.modal-btn {
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.modal-btn:hover {
+  background-color: rgba(50, 50, 50, 0.8);
+}
+
 .modal-click-zone {
   position: absolute;
   top: 0;
